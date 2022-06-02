@@ -1,0 +1,1 @@
+import logger from '../../loaders/logger'
