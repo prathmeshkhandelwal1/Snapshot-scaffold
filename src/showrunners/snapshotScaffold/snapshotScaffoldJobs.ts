@@ -3,11 +3,11 @@
     
     import { Container } from 'typedi';
     import schedule from 'node-schedule';
-    import testingChannelChannel from './testingChannelChannel';
+    import snapshotScaffoldChannel from './snapshotScaffoldChannel';
     
     export default () => {
       const startTime = new Date(new Date().setHours(0, 0, 0, 0));
-      const channel = Container.get(testingChannelChannel);
+      const channel = Container.get(snapshotScaffoldChannel);
       const threeHourRule = new schedule.RecurrenceRule();
       threeHourRule.hour = new schedule.Range(0, 23, 3);
       threeHourRule.minute = 0;
