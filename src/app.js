@@ -220,7 +220,7 @@ const createKeysFile = async (PK) => {
   }
 };
 
-const createChannelFile = async (channelName) => {
+const createChannelFile = async (channelName, snapshotAddress, channelLink) => {
   try {
     const channelPath = path.join(showrunnersPath, `/${channelName}`);
     fs.writeFile(
@@ -231,7 +231,7 @@ const createChannelFile = async (channelName) => {
     import { request, gql } from 'graphql-request';
     import { Logger } from 'winston';
     import { EPNSChannel, ISendNotificationParams } from '../../helpers/epnschannel';
-    import { cryptoMangaModel, IcryptoMangaData } from './cryptoMangaModel';
+    import { ${channelName}Model, I${channelName}Data } from './${channelName}Model';
     
     export interface ISnapshotProposal {
       percent: any;
@@ -249,7 +249,7 @@ const createChannelFile = async (channelName) => {
     }
     
     @Service()
-    export default class CryptoMangaChannel extends EPNSChannel {
+    export default class ${channelName}Channel extends EPNSChannel {
       constructor(@Inject('logger') public logger: Logger, @Inject('cached') public cached) {
         super(logger, {
           sdkSettings: {
@@ -259,8 +259,8 @@ const createChannelFile = async (channelName) => {
           },
           networkToMonitor: config.web3MainnetNetwork,
           dirname: __dirname,
-          name: 'CryptoManga',
-          url: 'https://cryptomanga.club/',
+          name: '${channelName}',
+          url: '${channelLink}',
           useOffChain: true,
         });
       }
@@ -272,11 +272,11 @@ const createChannelFile = async (channelName) => {
     
       async snapShotProposalsTask(simulate) {
         try {
-          const cryptoMangaData = await this.getcryptoMangaDataFromDB();
-          if (!cryptoMangaData?.snapshotProposalLatestTimestamp)
+          const ${channelName}Data = await this.get${channelName}DataFromDB();
+          if (!${channelName}Data?.snapshotProposalLatestTimestamp)
             this.logInfo('snapshotProposalLatestTimestamp from DB does not exist');
           const res: { proposals: ISnapshotProposal[] } = await this.fetchSnapshotProposals(
-            cryptoMangaData?.snapshotProposalLatestTimestamp ?? this.timestamp,
+            ${channelName}Data?.snapshotProposalLatestTimestamp ?? this.timestamp,
           );
           const lengthMsg = 'No of proposals : ' + res.proposals.length
           this.logInfo(lengthMsg);
@@ -286,10 +286,10 @@ const createChannelFile = async (channelName) => {
               const logMsg = 'title: ' + proposal.title + 'id : ' + proposal.id + 'msg : ' + proposal.body
               this.log(logMsg);
               
-              const payloadMsg = 'A Proposal has been created on cryptoManga [b: '+ proposal.title + ']' + '[timestamp:'+ Date.now() / 1000 + ']';
-              const message = 'A Proposal ' + proposal.title +'has been created on cryptoManga';
+              const payloadMsg = 'A Proposal has been created on ${channelName} [b: '+ proposal.title + ']' + '[timestamp:'+ Date.now() / 1000 + ']';
+              const message = 'A Proposal ' + proposal.title +'has been created on ${channelName}';
               const title = 'New Proposal';
-              const cta = 'https://snapshot.org/#/mangabank.eth/proposal/' + proposal.id;
+              const cta = 'https://snapshot.org/#/${snapshotAddress}/proposal/' + proposal.id;
               await this.sendNotification({
                 recipient: this.channelAddress,
                 message: message,
@@ -305,7 +305,7 @@ const createChannelFile = async (channelName) => {
               this.logError(error);
             }
           }
-          await this.setcryptoMangaDataInDB({ snapshotProposalLatestTimestamp: this.timestamp });
+          await this.set${channelName}DataInDB({ snapshotProposalLatestTimestamp: this.timestamp });
         } catch (error) {
           this.logError(error);
         }
@@ -316,7 +316,7 @@ const createChannelFile = async (channelName) => {
       this.logInfo('Fetching Snapshot Proposals');
       const snapshotQuery = gql\`
       {
-        proposals(orderBy: "start", orderDirection: desc, where: {space_in: ["mangabank.eth"],created_gte:createdGte}) {
+        proposals(orderBy: "start", orderDirection: desc, where: {space_in: ["${snapshotAddress}"],created_gte:createdGte}) {
           id
           title
           body
@@ -336,11 +336,11 @@ const createChannelFile = async (channelName) => {
 
     public async snapShotEndedProposalsTask(simulate) {
       try {
-        const cryptoMangaData = await this.getcryptoMangaDataFromDB();
-        if (!cryptoMangaData?.snapshotProposalEndedTimestamp)
+        const ${channelName}Data = await this.get${channelName}DataFromDB();
+        if (!${channelName}Data?.snapshotProposalEndedTimestamp)
           this.logInfo('snapshotProposalEndedTimestamp from DB does not exist');
         const res: { proposals: ISnapshotProposal[] } = await this.fetchEndedSnapshotProposals(
-          cryptoMangaData?.snapshotProposalEndedTimestamp ?? this.timestamp,
+          ${channelName}Data?.snapshotProposalEndedTimestamp ?? this.timestamp,
         );
         const lengthMsg = 'No of proposals : ' + res.proposals.length
         this.logInfo(lengthMsg);
@@ -363,9 +363,9 @@ const createChannelFile = async (channelName) => {
               const titleLog = 'title: ' + proposal.title + 'id: ' + proposal.id + 'msgs :' + proposal.msgs
               this.log(titleLog);
               const payloadMsg = '[t:Title] : ' + proposal.title + 'Choice "[d:' + resultChoice + ']" got majority vote of [b:'+maxPercentage+ ']%';
-              const message = 'A Proposal "' +proposal.title +  'has been concluded on cryptoManga';
+              const message = 'A Proposal "' +proposal.title +  'has been concluded on ${channelName}';
               const title = 'Proposal Ended';
-              const cta = 'https://snapshot.org/#/mangabank.eth/proposal/' + proposal.id;
+              const cta = 'https://snapshot.org/#/${snapshotAddress}/proposal/' + proposal.id;
               await this.sendNotification({
                 recipient: this.channelAddress,
                 message: message,
@@ -382,7 +382,7 @@ const createChannelFile = async (channelName) => {
             this.logError(error);
           }
         }
-        await this.setcryptoMangaDataInDB({ snapshotProposalEndedTimestamp: this.timestamp });
+        await this.set${channelName}DataInDB({ snapshotProposalEndedTimestamp: this.timestamp });
       } catch (error) {
         this.logError(error);
       }
@@ -392,7 +392,7 @@ const createChannelFile = async (channelName) => {
       this.logInfo('Fetching Ended Snapshot Proposals');
       const snapshotQuery = gql\`
       {
-        proposals(orderBy: "end", orderDirection: desc, where: {space_in: ["mangabank.eth"],end_gte:\${endedGte}\,state:"closed"}) {
+        proposals(orderBy: "end", orderDirection: desc, where: {space_in: ["${snapshotAddress}"],end_gte:\${endedGte}\,state:"closed"}) {
           id
           title
           body
@@ -449,10 +449,10 @@ const createChannelFile = async (channelName) => {
             const titleLog = 'title: ' + proposal.title + 'id: ' + proposal.id + 'msgs :' + proposal.msgs
             this.log(titleLog);
   
-            const payloadMsg = 'A Proposal is concluding soon on cryptoManga[b:' + proposal.title + ']';
-            const message = 'A Proposal "' + proposal.title + '" is concluding soon on cryptoManga ' + proposal.end;
+            const payloadMsg = 'A Proposal is concluding soon on ${channelName}[b:' + proposal.title + ']';
+            const message = 'A Proposal "' + proposal.title + '" is concluding soon on ${channelName} ' + proposal.end;
             const title = 'Proposal Ending Soon';
-            const cta = 'https://snapshot.org/#/mangabank.eth/proposal/' + proposal.id;
+            const cta = 'https://snapshot.org/#/${snapshotAddress}/proposal/' + proposal.id;
             await this.sendNotification({
               recipient: this.channelAddress,
               message: message,
@@ -471,20 +471,20 @@ const createChannelFile = async (channelName) => {
       }
     } 
 
-    // Get cryptoManga Data From DB
-  async getcryptoMangaDataFromDB() {
-    this.logInfo('Getting cryptoManga Data from DB..');
-    const doc = await cryptoMangaModel.findOne({ _id: 'cryptoManga_DATA' });
-    this.logInfo('cryptoManga Data obtained');
+    // Get ${channelName} Data From DB
+  async get${channelName}DataFromDB() {
+    this.logInfo('Getting ${channelName} Data from DB..');
+    const doc = await ${channelName}Model.findOne({ _id: '${channelName}_DATA' });
+    this.logInfo('${channelName} Data obtained');
     this.log(doc);
     return doc;
   }
 
-  // Set cryptoManga Data in DB
-  async setcryptoMangaDataInDB(cryptoMangaData: IcryptoMangaData) {
-    this.logInfo('Setting cryptoManga Data In DB');
-    this.log(cryptoMangaData);
-    await cryptoMangaModel.findOneAndUpdate({ _id: 'cryptoManga_DATA' }, cryptoMangaData, { upsert: true });
+  // Set ${channelName} Data in DB
+  async set${channelName}DataInDB(${channelName}Data: I${channelName}Data) {
+    this.logInfo('Setting ${channelName} Data In DB');
+    this.log(${channelName}Data);
+    await ${channelName}Model.findOneAndUpdate({ _id: '${channelName}_DATA' }, ${channelName}Data, { upsert: true });
   }
 
   }
@@ -499,7 +499,7 @@ const createChannelFile = async (channelName) => {
   }
 };
 
-const channelName = "channelsWith";
+const channelName = "Final";
 createChannelFolder(channelName);
 createJobsFile(channelName);
 createModelFile(channelName);
